@@ -8,7 +8,7 @@ import os
 ROOT = Path(__file__).parent
 LOCAL_VERSION_FILE = ROOT / "local_version.json"
 GITHUB_API = 'https://api.github.com/repos/hakushox/alien_invasion/releases/latest'
-GAME_EXE = ROOT / 'game.exe'
+GAME_EXE = ROOT / 'Angry Mercy.exe'
 
 os.startfile(ROOT)
 def get_latest_release():
@@ -69,24 +69,29 @@ def launch_game():
     subprocess.Popen([str(GAME_EXE)])
 
 if __name__ == '__main__':
-    local = get_local_version()
-    latest, zip_url = get_latest_release()
+    try:
+        local = get_local_version()
+        latest, zip_url = get_latest_release()
 
-    print(f'当前版本：{local} | 最新版本: {latest}')
-    print(f' | 下载链接: {zip_url}')
+        print(f'当前版本：{local} | 最新版本: {latest}')
+        print(f' | 下载链接: {zip_url}')
 
-    if local != latest:
-        if zip_url:
-            save_path = ROOT / 'update.zip'
-            download_update(zip_url, save_path)
-            print(f'已保存到：{save_path}')
-            apply_update(save_path)
+        if local != latest:
+            if zip_url:
+                save_path = ROOT / 'update.zip'
+                download_update(zip_url, save_path)
+                print(f'已保存到：{save_path}')
+                apply_update(save_path)
 
-            save_local_version(latest)
-            print(f'已更新到 {latest}')
+                save_local_version(latest)
+                print(f'已更新到 {latest}')
 
         else:
             print(f'{local}已经是最新版')
+    except requests.exceptions.RequestException:
+        print('网络问题更新失败')
+    except Exception as e:
+        print(f'更新失败：{e}')
     
     launch_game()
 
