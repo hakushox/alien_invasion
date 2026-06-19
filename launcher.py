@@ -2,21 +2,20 @@ import requests
 import json
 import zipfile
 import subprocess
+import sys
 from pathlib import Path
-import os
 
-ROOT = Path(__file__).parent
+ROOT = Path(sys.executable).parent
 GITHUB_API = 'https://api.github.com/repos/hakushox/alien_invasion/releases/latest'
 GAME_EXE = ROOT / 'Angry Mercy' / 'Angry Mercy.exe'
-LOCAL_VERSION_FILE = GAME_EXE.parent / "local_version.json"
+LOCAL_VERSION_FILE = GAME_EXE.parent / 'local_version.json'
 
-os.startfile(ROOT)
 def get_latest_release():
     response = requests.get(GITHUB_API, timeout=10)
-    response.raise_for_status() # 如果请求失败则抛出异常
+    response.raise_for_status()
     data = response.json()
 
-    version =data['tag_name']
+    version = data['tag_name']
 
     zip_url = None
     for asset in data['assets']:
@@ -29,12 +28,11 @@ def get_latest_release():
 def get_local_version():
     if not LOCAL_VERSION_FILE.exists():
         return None
-    with open(LOCAL_VERSION_FILE, 'r') as f:
+    with open(LOCAL_VERSION_FILE, 'r', encoding='utf-8') as f:
         data = json.load(f)
     return data.get('version')
 
 def download_update(zip_url, save_path):
-    '''下载文件显示进度'''
     response = requests.get(zip_url, stream=True, timeout=30)
     response.raise_for_status()
 
@@ -51,20 +49,19 @@ def download_update(zip_url, save_path):
 
     print('\n下载完成')
 
-def apply_update(zip_path):
-    '''解压，覆盖'''
+def apply_update(zip_path, extract_to):
     with zipfile.ZipFile(zip_path, 'r') as zf:
-        zf.extractall(ROOT)
+        zf.extractall(extract_to)
     zip_path.unlink()
     print('更新完成')
 
 def save_local_version(version):
-    with open(LOCAL_VERSION_FILE, 'w') as f:
+    with open(LOCAL_VERSION_FILE, 'w', encoding='utf-8') as f:
         json.dump({'version': version}, f, indent=4)
 
 def launch_game():
     if not GAME_EXE.exists():
-        print(f'找不到{GAME_EXE}')
+        print(f'找不到 {GAME_EXE}')
         return
     subprocess.Popen([str(GAME_EXE)])
 
@@ -74,25 +71,22 @@ if __name__ == '__main__':
         latest, zip_url = get_latest_release()
 
         print(f'当前版本：{local} | 最新版本: {latest}')
-        print(f' | 下载链接: {zip_url}')
 
         if local != latest:
-            if zip_url:
+            if zip_url is None:
+                print('有新版本但没有找到下载链接，直接启动')
+            else:
                 save_path = ROOT / 'update.zip'
                 download_update(zip_url, save_path)
-                print(f'已保存到：{save_path}')
-                apply_update(save_path)
-
+                apply_update(save_path, ROOT)
                 save_local_version(latest)
                 print(f'已更新到 {latest}')
-
         else:
-            print(f'{local}已经是最新版')
-    except requests.exceptions.RequestException:
-        print('网络问题更新失败')
-    except Exception as e:
-        print(f'更新失败：{e}')
-    
-    launch_game()
+            print(f'{local} 已经是最新版')
 
-    
+    except requests.exceptions.RequestException:
+        print('网络问题，直接启动游戏')
+    except Exception as e:
+        print(f'更新失败：{e}，直接启动游戏')
+
+    launch_game()
