@@ -1,0 +1,16 @@
+
+pre 5002课程
+
+https://northeastern.zoom.us/j/92851371578
+东部时间20点，北京时间早八点。
+
+canvas上有pre 5001 java的课程
+
+
+
+.\exiftool.exe -Author="BYD-D412" `
+-Creator="BYD-D412" `
+-CreateDate="2025:11:05 13:45:11+08:00" `
+-ModifyDate="2025:11:05 13:45:11+08:00" `
+-XMPToolkit="3.1-701" `
+-overwrite_original "1.pdf"
