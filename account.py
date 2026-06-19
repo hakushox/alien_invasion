@@ -3,9 +3,9 @@
 #
 import json
 from pathlib import Path
+from save_path import SAVE_DIR
 
-
-ACCOUNT_FILE = Path('accounts.json')
+ACCOUNT_FILE =  SAVE_DIR / 'accounts.json'
 
 def load_account():
     try:

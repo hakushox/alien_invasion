@@ -4,8 +4,9 @@
 import json
 from pathlib import Path
 from datetime import datetime
+from save_path import SAVE_DIR
 
-RANKING_FILE = Path('rankings.json')
+RANKING_FILE = SAVE_DIR / "rankings.json"
 
 def load_rankings():
     '''读取排行榜，若不存在则返回空列表'''

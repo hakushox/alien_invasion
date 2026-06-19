@@ -6,9 +6,9 @@ from pathlib import Path
 import os
 
 ROOT = Path(__file__).parent
-LOCAL_VERSION_FILE = ROOT / "local_version.json"
 GITHUB_API = 'https://api.github.com/repos/hakushox/alien_invasion/releases/latest'
-GAME_EXE = ROOT / 'Angry Mercy.exe'
+GAME_EXE = ROOT / 'Angry Mercy' / 'Angry Mercy.exe'
+LOCAL_VERSION_FILE = GAME_EXE.parent / "local_version.json"
 
 os.startfile(ROOT)
 def get_latest_release():

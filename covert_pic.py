@@ -1,6 +1,6 @@
 from PIL import Image
 
-img = Image.open('images/ship/ship_left_indictor.png')
+img = Image.open('images/ui/title2.png')
 bbox = img.getbbox()
 cropped = img.crop(bbox)
 
@@ -10,4 +10,4 @@ offset = ((size - cropped.width) // 2, (size - cropped.height) // 2)
 square.paste(cropped, offset)
 
 sizes = [(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)]
-square.save(r'c:\Users\Administrator\Desktop\test.ico', sizes=sizes)
+square.save(r'C:\Users\Administrator\Desktop\python_arduino\python_works\alien_invasion\images\test.ico', sizes=sizes)
