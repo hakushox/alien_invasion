@@ -7,16 +7,42 @@ import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
 import threading
+import os
+import stat
 
-ROOT = Path(sys.executable).parent
+# ── 终极跨平台路径定位（完美适配 onefile） ──
+if getattr(sys, 'frozen', False):
+    if sys.platform == "darwin":
+        bundle_path = Path(os.environ.get('XPC_SERVICE_NAME', '')).parent
+        if not bundle_path or bundle_path == Path('.'):
+            ROOT = Path(sys.executable).parent
+            if "Contents/MacOS" in str(ROOT):
+                TOP_DIR = ROOT.parent.parent.parent
+            else:
+                TOP_DIR = ROOT
+        else:
+            TOP_DIR = bundle_path.parent
+    else:
+        TOP_DIR = Path(sys.executable).parent
+else:
+    TOP_DIR = Path(__file__).parent
+
 GITHUB_API = 'https://api.github.com/repos/hakushox/alien_invasion/releases/latest'
-GAME_EXE = ROOT / 'Angry Mercy' / 'Angry Mercy.exe'
-LOCAL_VERSION_FILE = GAME_EXE.parent / 'local_version.json'
+
+# ── 跨平台路径常量定义 ──
+if sys.platform == "win32":
+    # Windows 环境结构
+    GAME_EXE = TOP_DIR / 'Angry Mercy' / 'Angry Mercy.exe'
+    LOCAL_VERSION_FILE = GAME_EXE.parent / 'local_version.json'
+else:
+    # Mac 环境精准适配默认打包产物
+    GAME_EXE = TOP_DIR / 'Angry Mercy' / 'Angry Mercy.app' / 'Contents' / 'MacOS' / 'Angry Mercy'    
+    LOCAL_VERSION_FILE = GAME_EXE.parent / 'local_version.json'
 
 # ── 颜色常量 ──
 BG = '#0a0a0a'
 FG = '#ffffff'
-ACCENT = '#e63946'  # 红色点缀，跟游戏风格搭
+ACCENT = '#e63946'  
 BAR_BG = '#1e1e1e'
 BAR_FG = '#e63946'
 
@@ -28,24 +54,19 @@ class LauncherApp:
         self.root.resizable(False, False)
         self.root.configure(bg=BG)
         
-        # 居中窗口
         self.root.eval('tk::PlaceWindow . center')
 
-        # 标题
         tk.Label(self.root, text='ANGRY MERCY', font=('Arial', 28, 'bold'),
                  bg=BG, fg=FG).pack(pady=(30, 5))
 
-        # 版本号
         self.version_label = tk.Label(self.root, text='',
                                        font=('Arial', 9), bg=BG, fg='#666666')
         self.version_label.pack()
 
-        # 状态文字
         self.status_label = tk.Label(self.root, text='正在检查更新...',
                                       font=('Arial', 10), bg=BG, fg=FG)
         self.status_label.pack(pady=(20, 5))
 
-        # 进度条
         style = ttk.Style()
         style.theme_use('clam')
         style.configure('Red.Horizontal.TProgressbar',
@@ -55,9 +76,7 @@ class LauncherApp:
                                          length=400, mode='determinate')
         self.progress.pack()
 
-        # 后台线程执行更新逻辑，避免卡住 UI
         threading.Thread(target=self.run, daemon=True).start()
-
         self.root.mainloop()
 
     def set_status(self, text):
@@ -82,10 +101,10 @@ class LauncherApp:
                     self.set_status('有新版本但找不到下载链接，直接启动')
                 else:
                     self.set_status(f'发现新版本 {latest}，开始下载...')
-                    save_path = ROOT / 'update.zip'
+                    save_path = TOP_DIR / 'update.zip'
                     download_update(zip_url, save_path, self.set_progress, self.set_status)
                     self.set_status('正在解压...')
-                    apply_update(save_path, ROOT)
+                    apply_update(save_path, TOP_DIR)
                     save_local_version(latest)
                     self.set_version(f'本地版本: {latest}')
                     self.set_status('更新完成，正在启动...')
@@ -138,19 +157,52 @@ def download_update(zip_url, save_path, progress_cb, status_cb):
                 status_cb(f'下载中... {percent:.1f}%')
 
 def apply_update(zip_path, extract_to):
+    """解压更新包并自动赋予 Mac 可执行权限"""
+    print("正在解压游戏文件...")
     with zipfile.ZipFile(zip_path, 'r') as zf:
         zf.extractall(extract_to)
+    
     zip_path.unlink()
+    
+    # === 核心安全魔法：只有在非 Windows (即 Mac) 环境下才执行赋权 ===
+    if sys.platform != "win32" and GAME_EXE.exists():
+        st = os.stat(GAME_EXE)
+        os.chmod(GAME_EXE, st.st_mode | stat.S_IXUSR)
+        print("成功为游戏核心文件赋予了 Mac 执行权限")
+
 
 def save_local_version(version):
+    """保存最新版本号到本地 json"""
+    # 确保保存版本文件的父目录（比如大文件夹或 .app 内部）真实存在，防止报错
+    LOCAL_VERSION_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(LOCAL_VERSION_FILE, 'w', encoding='utf-8') as f:
         json.dump({'version': version}, f, indent=4)
 
+
 def launch_game():
+    """验证可执行权限并异步拉起主程序"""
+    print(f"正在启动游戏，执行路径: {GAME_EXE}")
+    
     if not GAME_EXE.exists():
+        print(f"❌ 错误：游戏核心文件不存在：{GAME_EXE}")
         return
-    subprocess.Popen([str(GAME_EXE)])
 
+    # === 前置物理赋权，阻断权限异常 ===
+    if sys.platform != "win32":
+        try:
+            st = os.stat(GAME_EXE)
+            # 强制合并所有者可执行权限位 (0o100)
+            os.chmod(GAME_EXE, st.st_mode | stat.S_IXUSR)
+            print("权限校验通过：已确认 Mac 可执行属性")
+        except Exception as perm_err:
+            print(f"⚠️ 警告：无法刷新文件权限: {perm_err}")
 
+    try:
+        # 维持工作目录(cwd)上下文，执行异步拉起
+        subprocess.Popen([str(GAME_EXE)], cwd=str(GAME_EXE.parent))
+        print("进程创建成功，主程序已移交后台。")
+    except Exception as e:
+        print(f"❌ 进程创建失败，底层错误: {e}")
+        
 if __name__ == '__main__':
     LauncherApp()
