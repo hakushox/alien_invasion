@@ -22,13 +22,13 @@ class Escort:
                 pygame.image.load(
                     resource_path('images/ship/escort_normal.png')
                 ).convert_alpha(),
-                (113, 76)
+                (91, 61)
             ),
             'large': pygame.transform.scale(
                 pygame.image.load(
                     resource_path('images/ship/escort_large.png')
                 ).convert_alpha(),
-                (150, 101)
+                (120, 80)
             ),
         }
         

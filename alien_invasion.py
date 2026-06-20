@@ -449,9 +449,9 @@ class AlienInvasion:
                                     continue
                                 self._laser_hit_cooldown[key] = 22
                                 if isinstance(bullet.owner, Ship):
-                                    alien.hp -= 5 + self.stats.level // 5
+                                    alien.hp -= 5 + self.stats.level // 4
                                 elif isinstance(bullet.owner, Escort):
-                                    alien.hp -= (5 + self.stats.level // 5) // 2
+                                    alien.hp -= (5 + self.stats.level // 4) // 2
                                 else:
                                     alien.hp -= 1
                             else:
@@ -484,9 +484,9 @@ class AlienInvasion:
                             continue   
                         self._laser_hit_cooldown[key] = 22
                         if isinstance(bullet.owner, Ship):
-                            alien.hp -= 5 + self.stats.level // 5
+                            alien.hp -= 5 + self.stats.level // 3
                         elif isinstance(bullet.owner, Escort):
-                            alien.hp -= (5 + self.stats.level // 5) // 2
+                            alien.hp -= (5 + self.stats.level // 3) // 2
                         else:
                             alien.hp -= 1
                         alien.recent_damage.append((alien.frame_count, 8 + self.stats.level // 5))

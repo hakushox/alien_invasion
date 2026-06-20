@@ -40,6 +40,8 @@ class GunSystem:
         self.invincible_total = 0
         self.ammo_limitless = 0
         self.ammo_total = 0
+        self.last_bullet_count  = 0
+        self.last_bullet_allowed = 0
 
         self.gauge = PowerUpGauge(self, style='weapon')
         self.gauge_invincible = PowerUpGauge(self, style='invincible')

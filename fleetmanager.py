@@ -19,8 +19,8 @@ class FleetManager:
         # self.alien_width, self.alien_height = _a.rect.size
         # 然后所有队形方法直接用 self.alien_width，不再每次实例化。
         self.patterns = {
-            3:self._fleet_grid, 2: self._fleet_v,
-            4: self._fleet_split, 1: self._fleet_diamond,
+            3:self._fleet_grid, 1: self._fleet_v,
+            4: self._fleet_split, 2: self._fleet_diamond,
             5: self._fleet_random,
         }
     

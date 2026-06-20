@@ -19,7 +19,7 @@ class Ship(Sprite):
         self.screen_rect = ai_game.screen.get_rect()
         self.settings = ai_game.settings
 
-        target_width = self.settings.screen_width // 11
+        target_width = self.settings.screen_width // 7
         target_height = int(target_width * (82*2) / (125*2))
 
 
@@ -61,7 +61,7 @@ class Ship(Sprite):
             pygame.transform.scale(
                 pygame.image.load(
                     resource_path(f'images/ship/move/ship_laser/ship_laser_0000{i}.png')).convert_alpha(), 
-                (125*2, 82*2))   for i in range(4)                                                                              
+                (target_width, target_height))   for i in range(4)                                                                              
         ]
         self.frames_index = 0
         self.frames_timer = 0
