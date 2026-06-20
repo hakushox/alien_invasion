@@ -128,11 +128,16 @@ def get_latest_release():
     response.raise_for_status()
     data = response.json()
     version = data['tag_name']
+    if sys.platform == 'win32':
+        target = 'win_update.zip'
+    else:
+        target = 'mac_update.zip'
+
     zip_url = None
     for asset in data['assets']:
-        if asset['name'].endswith('.zip'):
+        if asset['name'] == target:
             zip_url = asset['browser_download_url']
-            break
+
     return version, zip_url
 
 def get_local_version():
