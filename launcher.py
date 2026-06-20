@@ -7,16 +7,50 @@ import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
 import threading
+import os  # <--- 确保你代码顶部有 import os，如果没有请加上
 
-ROOT = Path(sys.executable).parent
+# ── 终极跨平台路径定位（完美适配 onefile） ──
+if getattr(sys, 'frozen', False):
+    # 打包后的环境
+    if sys.platform == "darwin":
+        # 【Mac 专属】无论 launcher 是不是 onefile 打包，
+        # Mac 底层都能通过这个环境变量拿到最外层 launcher.app 的绝对路径
+        bundle_path = Path(os.environ.get('XPC_SERVICE_NAME', '')).parent
+        
+        # 兜底：如果没拿到环境变量（比如未完全初始化），用老逻辑
+        if not bundle_path or bundle_path == Path('.'):
+            ROOT = Path(sys.executable).parent
+            if "Contents/MacOS" in str(ROOT):
+                TOP_DIR = ROOT.parent.parent.parent
+            else:
+                TOP_DIR = ROOT
+        else:
+            # 成功穿透 onefile 临时目录，它的 parent 就是总根目录（比如 /Applications/）
+            TOP_DIR = bundle_path.parent
+    else:
+        # Windows 环境保持原样
+        TOP_DIR = Path(sys.executable).parent
+else:
+    # 未打包的源码开发环境
+    TOP_DIR = Path(__file__).parent
+
 GITHUB_API = 'https://api.github.com/repos/hakushox/alien_invasion/releases/latest'
-GAME_EXE = ROOT / 'Angry Mercy' / 'Angry Mercy.exe'
-LOCAL_VERSION_FILE = GAME_EXE.parent / 'local_version.json'
+
+if sys.platform == "win32":
+    # ── Windows 环境结构 ──
+    GAME_EXE = TOP_DIR / 'Angry Mercy' / 'Angry Mercy.exe'
+    LOCAL_VERSION_FILE = GAME_EXE.parent / 'local_version.json'
+else:
+    # ── Mac 环境精准适配默认打包产物 ──
+    # 1. 启动目标直接指向 .app 包内部的二进制文件
+    GAME_EXE = TOP_DIR / 'Angry Mercy' / 'Angry Mercy.app' / 'Contents' / 'MacOS' / 'Angry Mercy'    
+    # 2. 版本控制 json 文件存放在这个二进制旁边（.app 内部）
+    LOCAL_VERSION_FILE = GAME_EXE.parent / 'local_version.json'
 
 # ── 颜色常量 ──
 BG = '#0a0a0a'
 FG = '#ffffff'
-ACCENT = '#e63946'  # 红色点缀，跟游戏风格搭
+ACCENT = '#e63946'  
 BAR_BG = '#1e1e1e'
 BAR_FG = '#e63946'
 
@@ -82,10 +116,12 @@ class LauncherApp:
                     self.set_status('有新版本但找不到下载链接，直接启动')
                 else:
                     self.set_status(f'发现新版本 {latest}，开始下载...')
-                    save_path = ROOT / 'update.zip'
+                    # 【修正】下载文件存放在总根目录下
+                    save_path = TOP_DIR / 'update.zip'
                     download_update(zip_url, save_path, self.set_progress, self.set_status)
                     self.set_status('正在解压...')
-                    apply_update(save_path, ROOT)
+                    # 【修正】解压到总根目录覆盖旧文件
+                    apply_update(save_path, TOP_DIR)
                     save_local_version(latest)
                     self.set_version(f'本地版本: {latest}')
                     self.set_status('更新完成，正在启动...')
@@ -149,6 +185,7 @@ def save_local_version(version):
 def launch_game():
     if not GAME_EXE.exists():
         return
+    # Mac 必须以数组形式安全传入字符串路径
     subprocess.Popen([str(GAME_EXE)])
 
 
